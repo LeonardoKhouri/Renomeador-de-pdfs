@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Renomeador de Documentos PDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Renomeador de documentos</h1>
+      <p>Selecione seus PDFs e o app identifica o tipo de documento e a data, inclusive em arquivos escaneados. Confira os nomes sugeridos, ajuste se precisar e baixe tudo organizado. Todo o processamento acontece no seu navegador.</p>
+    </div>
+    <div class="badge">PROCESSADO<br>LOCALMENTE</div>
+  </header>
+
+  <section class="how-it-works" aria-labelledby="howTitle">
+    <h2 id="howTitle">Como funciona</h2>
+    <ol class="how-steps" role="list">
+      <li><span class="step-number" aria-hidden="true">1</span><div><strong>Adicione os PDFs</strong><p>Selecione arquivos ou uma pasta.</p></div></li>
+      <li><span class="step-number" aria-hidden="true">2</span><div><strong>Confira os nomes</strong><p>O app identifica o tipo e a data. Edite se precisar.</p></div></li>
+      <li><span class="step-number" aria-hidden="true">3</span><div><strong>Baixe e pronto</strong><p>Salve os PDFs com os novos nomes.</p></div></li>
+    </ol>
+  </section>
+
+  <div class="iframe-warning" id="iframeWarning" style="display:none;">
+    Para usar pastas, baixe este HTML e abra no Chrome ou Edge. Nesta prévia, use <strong>Selecionar arquivos</strong>.
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <div class="icon">&#128193;</div>
+    <strong>Clique para selecionar uma pasta</strong>
+    <span>ou arraste uma pasta ou seus PDFs para cá</span>
+    <div style="margin-top:12px;">
+      <button type="button" class="secondary small" id="filesBtn">Selecionar arquivos</button>
+    </div>
+    <input type="file" id="fileInput" accept="application/pdf" multiple>
+    <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+  </div>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <div>
+      <h2>Documentos</h2>
+      <div class="count" id="count">0 arquivos</div>
+    </div>
+    <div class="toolbar-actions">
+      <button class="secondary small" id="clearBtn">Limpar tudo</button>
+      <button class="secondary" id="saveToFolderBtn">Salvar direto numa pasta</button>
+      <button id="downloadAllBtn">Baixar todos (.zip)</button>
+    </div>
+  </div>
+
+  <div class="progress-panel" id="progressPanel" hidden>
+    <div class="progress-top">
+      <strong id="progressLabel">0 de 0 arquivos processados</strong>
+      <button type="button" class="secondary small" id="pauseBtn">Interromper</button>
+    </div>
+    <progress id="batchProgress" value="0" max="1" aria-labelledby="progressLabel"></progress>
+    <p class="progress-detail" id="progressDetail" role="status" aria-live="polite"></p>
+    <p class="progress-detail" id="currentFileProgress"></p>
+  </div>
+
+  <div class="list-filters" id="listFilters" role="group" aria-label="Filtrar documentos" hidden>
+    <button type="button" class="secondary small" id="filterAllBtn" aria-pressed="true">Todos <span id="allCount">0</span></button>
+    <button type="button" class="secondary small" id="filterReviewBtn" aria-pressed="false">Precisa revisar <span id="reviewCount">0</span></button>
+  </div>
+  <p class="app-notice" id="appNotice" role="status" aria-live="polite" hidden></p>
+  <div class="list" id="list"></div>
+
+  <div class="empty" id="emptyMsg">Nenhum arquivo carregado ainda.</div>
+
+  <details class="detection-settings" id="namingSettings">
+    <summary class="detection-heading">
+      <span class="detection-title">Formato dos nomes</span>
+      <span class="detection-meta">
+        <span class="detection-count" id="namingSummary">Tipo - Data</span>
+        <span class="detection-toggle" aria-hidden="true">
+          <span class="detection-open-label">Abrir</span><span class="detection-close-label">Fechar</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
+      </span>
+    </summary>
+    <div class="detection-body">
+      <p>Escolha a ordem e, se quiser, adicione um prefixo aos nomes dos PDFs.</p>
+      <div class="naming-fields">
+        <div><label for="nameOrder">Ordem do nome</label><select id="nameOrder"><option value="type-date">Tipo - Data</option><option value="date-type">Data - Tipo</option></select></div>
+        <div><label for="namePrefix">Prefixo (opcional)</label><input id="namePrefix" type="text" maxlength="60" placeholder="Ex.: Prefeitura"></div>
+        <div class="naming-extra"><label for="nameLocation">Adicionar ao nome do PDF</label><select id="nameLocation" aria-describedby="nameLocationHelp"><option value="none">Não incluir informação extra</option><option value="cidade">Cidade</option><option value="setor">Setor/departamento</option></select></div>
+      </div>
+      <p id="nameLocationHelp">A informação escolhida é buscada no texto/OCR e acrescentada ao final do nome. Você pode conferir ou corrigir o campo em cada documento.</p>
+      <p class="name-example"><small>Exemplo</small><span id="nameExample"></span></p>
+      <div class="detection-actions"><button type="button" id="saveNamingBtn">Salvar formato</button><button type="button" class="secondary" id="resetNamingBtn">Restaurar padrão</button></div>
+      <p class="detection-status" id="namingStatus" role="status" aria-live="polite"></p>
+    </div>
+  </details>
+
+  <details class="detection-settings" id="detectionSettings">
+    <summary class="detection-heading">
+      <span class="detection-title" id="detectionTitle">Detecção de documentos / OCR</span>
+      <span class="detection-meta">
+        <span class="detection-count" id="detectionCount"></span>
+        <span class="detection-toggle" aria-hidden="true">
+          <span class="detection-open-label">Abrir</span><span class="detection-close-label">Fechar</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
+      </span>
+    </summary>
+    <div class="detection-body">
+      <p id="detectionHelp">Escolha o que o app deve reconhecer. Adicione, edite ou remova os termos e clique em <strong>Salvar termos</strong>.</p>
+      <label for="detectionTerms">Tipos de documento — um por linha</label>
+      <textarea id="detectionTerms" rows="9" spellcheck="false" aria-describedby="detectionHelp detectionBehavior" placeholder="TERMO DE EMPRÉSTIMO DE EQUIPAMENTOS&#10;TERMO DE RECEBIMENTO"></textarea>
+      <p id="detectionBehavior">Funciona no texto e no OCR, mesmo sem acentos ou letras maiúsculas. Salvar atualiza os tipos detectados e preserva suas correções manuais e as datas.</p>
+      <div class="detection-actions">
+        <button type="button" id="saveDetectionBtn">Salvar termos</button>
+        <button type="button" class="secondary" id="resetDetectionBtn">Restaurar padrões</button>
+      </div>
+      <p class="detection-status" id="detectionStatus" role="status" aria-live="polite"></p>
+      <div class="terms-transfer">
+        <p>Leve sua lista salva para outro computador. Ao importar, confira os termos e clique em <strong>Salvar termos</strong>.</p>
+        <div class="detection-actions"><button type="button" class="secondary small" id="exportTermsBtn">Exportar termos</button><button type="button" class="secondary small" id="importTermsBtn">Importar termos</button></div>
+        <input type="file" id="importTermsInput" accept=".json,application/json">
+      </div>
+    </div>
+  </details>
+
+  <footer>A leitura de PDFs escaneados é automática e pode levar alguns segundos. Confira o resultado antes de baixar.</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

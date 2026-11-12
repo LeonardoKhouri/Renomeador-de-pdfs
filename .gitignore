@@ -1,0 +1,16 @@
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporários do editor
+*.swp
+*.swo
+*~
+
+# PDFs pessoais usados nos testes
+/documentos-pessoais/
+
+# Downloads salvos na pasta do projeto
+/documentos-renomeados.zip
+/termos-renomeador-pdfs.json
